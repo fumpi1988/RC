@@ -54,6 +54,11 @@ void onConnectedController(ControllerPtr ctl) {
 void onDisconnectedController(ControllerPtr ctl) {
   Serial.println("PS4-Controller getrennt.");
   if (ps4Controller == ctl) {
+    // Motoren stoppen und Bremsen aktivieren
+    ledcWrite(0, 0);
+    ledcWrite(1, 0);
+    digitalWrite(BRAKE_LEFT, HIGH);
+    digitalWrite(BRAKE_RIGHT, HIGH);
     ps4Controller = nullptr;
   }
 }
