@@ -9,6 +9,8 @@ const int PWM_RIGHT   = 18;
 const int BRAKE_RIGHT = 19;
 const int DIR_RIGHT   = 21;
 
+const int PWM_EXTRA   = 23;  // Dritter Motor
+
 // —— Steuerparameter ——
 const int DEADZONE = 25;
 const int MIN_PWM  = 20;
@@ -31,6 +33,9 @@ ControllerPtr ps4Controller = nullptr;
 int speedStage = 1;
 bool prevDpadUp = false;
 bool prevDpadDown = false;
+bool prevSquare = false;
+bool extraMotorRunning = false;
+unsigned long extraStartMillis = 0;
 
 // —— Callback bei Verbindung ——
 void onConnectedController(ControllerPtr ctl) {
@@ -40,10 +45,13 @@ void onConnectedController(ControllerPtr ctl) {
   // PWM erst hier initialisieren
   ledcSetup(0, 1000, 8);        // Kanal 0 – links
   ledcSetup(1, 1000, 8);        // Kanal 1 – rechts
+  ledcSetup(2, 1000, 8);        // Kanal 2 – dritter Motor
   ledcAttachPin(PWM_LEFT, 0);
   ledcAttachPin(PWM_RIGHT, 1);
+  ledcAttachPin(PWM_EXTRA, 2);
   ledcWrite(0, 0);
   ledcWrite(1, 0);
+  ledcWrite(2, 0);
 
   auto& c = lightColors[speedStage - 1];
   ctl->setColorLED(c[0], c[1], c[2]);
@@ -57,8 +65,10 @@ void onDisconnectedController(ControllerPtr ctl) {
     // Motoren stoppen und Bremsen aktivieren
     ledcWrite(0, 0);
     ledcWrite(1, 0);
+    ledcWrite(2, 0);
     digitalWrite(BRAKE_LEFT, HIGH);
     digitalWrite(BRAKE_RIGHT, HIGH);
+    extraMotorRunning = false;
     ps4Controller = nullptr;
   }
 }
@@ -97,6 +107,30 @@ void handleDpad() {
   prevDpadDown = down;
 }
 
+// —— Quadrat-Taste → dritter Motor ——
+void handleSquareMotor() {
+  if (!ps4Controller) return;
+
+  bool sq = ps4Controller->square();
+
+  if (sq && !prevSquare) {
+    if (extraMotorRunning) {
+      ledcWrite(2, 0);
+      extraMotorRunning = false;
+    } else {
+      extraMotorRunning = true;
+      extraStartMillis = millis();
+    }
+  }
+  prevSquare = sq;
+
+  if (extraMotorRunning) {
+    unsigned long elapsed = millis() - extraStartMillis;
+    int pwm = (elapsed >= 4000) ? 255 : map(elapsed, 0, 4000, 0, 255);
+    ledcWrite(2, pwm);
+  }
+}
+
 void setup() {
   Serial.begin(115200);
 
@@ -106,6 +140,7 @@ void setup() {
   pinMode(PWM_RIGHT, OUTPUT);
   pinMode(BRAKE_RIGHT, OUTPUT);
   pinMode(DIR_RIGHT, OUTPUT);
+  pinMode(PWM_EXTRA, OUTPUT);
 
   digitalWrite(BRAKE_LEFT, HIGH);   // Zu Beginn Bremsen aktiv
   digitalWrite(BRAKE_RIGHT, HIGH);
@@ -121,6 +156,7 @@ void loop() {
 
   if (ps4Controller && ps4Controller->isConnected()) {
     handleDpad();
+    handleSquareMotor();
 
     // Wenn X gedrückt wird: Beide Motoren bremsen (Not-Stopp)
     if (ps4Controller->x()) {

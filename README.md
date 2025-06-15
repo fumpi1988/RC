@@ -7,6 +7,7 @@ Dieses Projekt zeigt, wie ein ESP32 mithilfe der [Bluepad32](https://github.com/
 - ESP32-Board
 - Zwei Motorentreiber (linke und rechte Seite)
 - Jeweils ein PWM-, Brems- und Richtungs-Pin pro Motor
+- Optional: ein dritter Motor (nur PWM, Pin 23)
 
 Die Standardbelegung im Code lautet:
 
@@ -17,6 +18,8 @@ Die Standardbelegung im Code lautet:
 | Richtung | 17          | 21           |
 
 Bei Bedarf können die Pins im Sketch angepasst werden.
+
+Der dritte Motor nutzt standardmäßig Pin 23 als PWM-Ausgang.
 
 ## Installation
 
@@ -32,6 +35,7 @@ Nach dem Flashen meldet der ESP32 über die serielle Schnittstelle „Bereit fü
 - **Rechter Stick:** Geschwindigkeit und Richtung des rechten Motors
 - **Steuerkreuz oben/unten:** Wechsel der Geschwindigkeitsstufe (1–5)
 - **X-Taste:** Sofortiges Bremsen beider Motoren (Not-Stopp)
+- **Quadrat-Taste:** Dritten Motor mit Softstart ein-/ausschalten
 
 Beim Trennen des Controllers werden die Motoren automatisch gestoppt und die Bremsen angezogen【F:controller.ino†L54-L63】.
 
