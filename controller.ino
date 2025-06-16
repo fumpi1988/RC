@@ -111,7 +111,8 @@ void handleDpad() {
 void handleSquareMotor() {
   if (!ps4Controller) return;
 
-  bool sq = ps4Controller->square();
+  // "Square" des PS4-Controllers entspricht BUTTON_X
+  bool sq = ps4Controller->x();
 
   if (sq && !prevSquare) {
     if (extraMotorRunning) {
